@@ -1,0 +1,268 @@
+.grid,.grid-header,.grid-rows,.grid-tree-cell,.grid-group-row,.grid-cell{
+  box-sizing: border-box;
+}
+.grid{
+  /* font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; */
+  height:500px;
+  overflow:auto;
+  width:100%;
+  border:2px solid;
+  color:#111;
+  margin:0;
+  padding:0;
+  position:relative;
+  font-family:inherit;
+}
+.grid.rtl{
+  direction:rtl;
+}
+.grid .grid-header{
+  display:grid;
+  font-size:12px;
+  position:sticky;
+  top:0;
+  z-index:10;
+  list-style:none;
+}
+
+
+  .grid-header .grid-title{
+    height:24px;
+    line-height:24px;
+    z-index:1;
+    cursor: default;
+    position: relative;
+    white-space: nowrap;
+  }
+  
+  .grid-header .grid-title .move-handle{
+    text-align:center;
+  }
+
+  
+.grid-rows{
+    font-size:10px;
+    margin:0;
+    position:relative;
+    min-width:fit-content;
+}
+.grid-rows .grid-row{
+  display:grid;
+  list-style: none;
+}
+
+.grid-group-row{
+  -webkit-user-select:none;
+  user-select:none;
+  list-style: none;
+  padding:0 6px;
+  white-space: nowrap;
+  width:100%;
+  
+}
+
+.grid-group-row ul{
+  padding:0;
+  height:24px;
+  top:calc(50% - 12px);
+  position: relative;
+  width:100%;
+}
+
+.grid-group-row li{
+  list-style: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+.grid .grid-checkbox{
+  float:left;
+  width:24px;
+  height:24px;
+  display:flex; 
+  text-align:center;
+  flex-direction: row;
+  justify-content:  center;
+  align-items: center;
+  /* background:red; */
+}
+
+.grid.rtl .grid-checkbox{
+  float:right;
+}
+.grid-checkbox input{
+  position:relative;
+}
+
+
+  .grid-rows .grid-row .grid-cell{
+    position:relative;
+    white-space: nowrap;
+    padding:0 8px
+  }
+  .grid-rows .grid-row .grid-cell.grid-cell-text{
+    text-align:center;
+    -webkit-user-select:none;
+    user-select:none;
+    text-overflow: ellipsis;
+    overflow:hidden;
+  }
+
+
+
+.grid-tree-cell li{
+  display:inline-block;
+  list-style:none;
+  
+}
+.grid-cell-checkbox{
+  display:flex;
+  flex-direction: row;
+  justify-content: center;
+  
+}
+.grid-cell-checkbox input{
+  position:relative;
+  top:calc(50% - 10px);
+}
+
+.grid .grid-tree-cell{
+  left:0;
+  width:100%;
+  height:24px;
+  line-height:24px;
+  overflow:hidden;
+  position:relative;
+  white-space: nowrap;
+  margin:0;
+  top:calc(50% - 12px);
+}
+.grid.rtl .grid-tree-cell{
+  left:unset;
+  right:0;
+}
+
+
+.grid .grid-toggle-icon{
+  width:24px;
+  height:24px;
+  line-height:24px;
+  text-align: center;
+  float:left;
+  cursor:pointer;
+  /* background:pink; */
+}
+.grid.rtl .grid-toggle-icon{
+  float:right;
+}
+
+.grid .grid-text{
+  height:24px;
+  line-height:24px;
+  /* background:yellow; */
+}
+
+
+.grid .grid-toggle-icon.opened:after{
+    content:'\25BC	';
+  }
+.grid .grid-toggle-icon.closed:after{
+  content:'\25BA';
+}
+.grid.rtl .grid-toggle-icon.closed:after{
+  content:'\25C0';
+}
+
+.grid .resize-handle{
+  background:#ddd;
+  width:6px;
+  height:100%;
+  position:absolute;
+  left:calc(100% - 6px);
+  top:0;
+  border-radius:30px;
+  opacity:0;
+  cursor: col-resize;
+}
+
+.grid.rtl .resize-handle{
+  left:unset;
+  right:calc(100% - 6px);
+}
+
+.grid .move-handle{
+  width:calc(100% - 16px);
+  position:absolute;
+  left:16px;
+  height:100%;
+  top:0;
+  cursor:move;
+}
+
+.grid.rtl .move-handle{
+  left:unset;
+  right:16px;
+}
+
+.grid-title-shadow{
+  position:fixed;
+  height:30px;
+  line-height:30px;
+  text-align: center;
+  opacity:.9;
+}
+
+.grid .column-setting{
+  width:16px;
+  height:24px;
+  left:0;
+  top:calc(50% - 12px);
+  position:absolute;
+  text-align:center;
+  line-height:24px;
+  cursor:pointer;
+}
+.grid.rtl .column-setting{
+  left:unset;
+  right:0;
+  top:calc(50% - 12px);
+}
+.column-setting:after{
+  content:'\22EE';
+}
+.column-popup{
+  position:absolute;
+  top:100%;
+  padding:0;
+  border:1px solid #ddd;
+  box-shadow:4px 4px 10px 0 rgba(20,20,20,.2);
+  margin:0;
+  width:80px;
+  display:none;
+}
+.column-popup li{
+  position:relative;
+  list-style:none;
+  padding:0 6px;
+  z-index:10;
+  background:#fff;
+  
+}
+.column-popup li.active:before{
+  content:'\2714';
+  width:24px;
+  display: inline-block;
+  text-align:center;
+}
+.column-popup .backdrop{
+  background: none;
+  position:fixed;
+  left:0;
+  top:0;
+  z-index:1;
+  width:100%;
+  height:100%;
+}
+
