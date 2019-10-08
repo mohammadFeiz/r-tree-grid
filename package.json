@@ -1,0 +1,21 @@
+{
+  "name": "r-tree-grid",
+  "email": "feiz.ms@gmail.com",
+  "version": "1.0.0",
+  "description": "react tree grid.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mohammadFeiz/r-tree-grid.git"
+  },
+  "keywords": [],
+  "author": "mohammad sharif feiz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mohammadFeiz/r-tree-grid/issues"
+  },
+  "homepage": "https://github.com/mohammadFeiz/r-tree-grid#readme"
+}
