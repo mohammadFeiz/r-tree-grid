@@ -1,5 +1,5 @@
 import React,{Component,createRef,createContext} from 'react';
-import './grid.css';
+import './index.css';
 import $ from 'jquery';
 var GridContext = createContext();
 export default class Grid extends Component{
