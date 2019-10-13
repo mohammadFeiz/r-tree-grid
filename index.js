@@ -31,9 +31,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
@@ -52,19 +52,90 @@ function (_Component) {
     _classCallCheck(this, Grid);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Grid).call(this, props));
-    _this.state = {};
-    _this.groupsOpen = [];
+    _this.state = {
+      getModel: _this.getModel.bind(_assertThisInitialized(_this)),
+      getColumns: _this.getColumns.bind(_assertThisInitialized(_this))
+    };
     return _this;
   }
 
   _createClass(Grid, [{
-    key: "setGroupsOpen",
-    value: function setGroupsOpen(model) {
-      if (this.props.groupField) {
-        this.groupsOpen = model.map(function (m) {
-          return m._opened;
-        });
+    key: "getCheckboxColumn",
+    value: function getCheckboxColumn() {
+      var _this$props = this.props,
+          checkField = _this$props.checkField,
+          dataset = _this$props.dataset;
+
+      if (!checkField) {
+        return [];
       }
+
+      return [{
+        width: 30,
+        resizable: false,
+        movable: false,
+        cellsClassName: 'grid-cell-checkbox',
+        field: dataset._checked,
+        template: function template(value, _ref, context) {
+          var row = _ref.row,
+              column = _ref.column;
+          var _onchange = context.onchange,
+              dataset = context.dataset,
+              model = context.model,
+              setValueByDataset = context.setValueByDataset;
+
+          var a = _react.default.createElement(GridCheckbox, {
+            checked: value || false,
+            disabled: checkField.disabled(row),
+            onchange: function onchange(e) {
+              setValueByDataset(row, e.target.checked, dataset._checked);
+
+              _onchange({
+                model: model
+              });
+            }
+          });
+
+          return a;
+        }
+      }];
+    }
+  }, {
+    key: "getRowsByParent",
+    value: function getRowsByParent(model, parentKey, parentValue, result) {
+      for (var i = 0; i < model.length; i++) {
+        var row = model[i];
+
+        if (row[parentKey] === parentValue) {
+          result.push(row);
+          model.splice(i, 1);
+          i--;
+        }
+      }
+
+      return {
+        result: result,
+        model: model
+      };
+    }
+  }, {
+    key: "convertModel",
+    value: function convertModel(model, dataset) {
+      var _this2 = this;
+
+      var convertModelRecursive = function convertModelRecursive(model, parent, result) {
+        var a = _this2.getRowsByParent(model, dataset._parent, parent, result);
+
+        for (var i = 0; i < a.result.length; i++) {
+          var row = a.result[i];
+          row[dataset._childs] = row[dataset._childs] || [];
+          convertModelRecursive(a.model, row[dataset._id], row[dataset._childs]);
+        }
+      };
+
+      var convertedModel = [];
+      convertModelRecursive(model, undefined, convertedModel);
+      return convertedModel;
     }
   }, {
     key: "getValue",
@@ -94,51 +165,20 @@ function (_Component) {
   }, {
     key: "getSize",
     value: function getSize() {
-      var _this2 = this;
-
-      var _this$props = this.props,
-          groupField = _this$props.groupField,
-          columns = _this$props.columns,
-          checkField = _this$props.checkField;
-      var size = columns.filter(function (column) {
-        if (!groupField) {
-          return true;
-        }
-
-        return !_this2.compaireFields(column.field, groupField);
-      }).map(function (column) {
-        return column.width ? column.width + 'px' : 'auto';
-      });
-
-      if (checkField) {
-        size = ['30px'].concat(size);
-      }
-
-      return size.join(' ');
-    }
-  }, {
-    key: "getTotal",
-    value: function getTotal() {
-      var _this3 = this;
+      var columns = this.state.columns;
 
       var _this$getTheme = this.getTheme(),
-          borderWidth = _this$getTheme.borderWidth,
-          _this$props2 = this.props,
-          groupField = _this$props2.groupField,
-          checkField = _this$props2.checkField;
+          borderWidth = _this$getTheme.borderWidth;
 
-      var columns = this.props.columns.filter(function (column) {
-        return !_this3.compaireFields(column.field, groupField);
+      var total = 0;
+      var size = columns.map(function (column) {
+        total += column.width;
+        return column.width ? column.width + 'px' : 'auto';
       });
-      var length = columns.length,
-          columnsWidth = 0;
-
-      for (var i = 0; i < length; i++) {
-        columnsWidth += columns[i].width;
-      }
-
-      var bordersWidth = (length + 1 + (checkField ? 1 : 0)) * borderWidth;
-      return bordersWidth + columnsWidth + (checkField ? 30 : 0);
+      return {
+        size: size.join(' '),
+        total: total + (columns.length + 1) * borderWidth
+      };
     }
   }, {
     key: "getStyle",
@@ -153,6 +193,38 @@ function (_Component) {
       }, style);
     }
   }, {
+    key: "getColumns",
+    value: function getColumns(columns) {
+      var _this3 = this;
+
+      var _this$props2 = this.props,
+          groupField = _this$props2.groupField,
+          treeField = _this$props2.treeField;
+      var checkboxColumn = this.getCheckboxColumn();
+      var cols = checkboxColumn.concat(columns).filter(function (column, i) {
+        if (_this3.compaire(column.field, treeField)) {
+          column.template = function (value, _ref2, context) {
+            var row = _ref2.row,
+                column = _ref2.column;
+            return _react.default.createElement(TreeCell, {
+              row: row,
+              column: column,
+              value: value
+            });
+          };
+
+          column.cellsClassName = 'grid-cell-tree';
+        }
+
+        if (!groupField) {
+          return true;
+        }
+
+        return !_this3.compaire(column.field, groupField);
+      });
+      return cols;
+    }
+  }, {
     key: "getColumn",
     value: function getColumn(obj) {
       var columns = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.props.columns;
@@ -161,7 +233,7 @@ function (_Component) {
         var column = columns[i];
 
         for (var prop in obj) {
-          if (!this.compaireFields(column[prop], obj[prop])) {
+          if (!this.compaire(column[prop], obj[prop])) {
             continue;
           }
 
@@ -198,17 +270,25 @@ function (_Component) {
     key: "getModel",
     value: function getModel(model) {
       var columns = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.props.columns;
-      var groupField = this.props.groupField;
+      var _this$props3 = this.props,
+          groupField = _this$props3.groupField,
+          dataType = _this$props3.dataType,
+          dataset = _this$props3.dataset;
+      model = JSON.parse(JSON.stringify(model));
+
+      if (dataType === 'flat') {
+        model = this.convertModel(model, dataset);
+      }
 
       if (!groupField) {
         return model;
       }
 
-      var column = this.getColumn({
+      var groupColumn = this.getColumn({
         field: groupField
       }, columns);
 
-      if (!column) {
+      if (!groupColumn) {
         console.error("A column with field equal to groupField not found!!!");
         return model;
       }
@@ -217,30 +297,29 @@ function (_Component) {
 
       for (var i = 0; i < model.length; i++) {
         var row = model[i];
-        var field = this.getValue(row, groupField);
+        var groupValue = this.getValue(row, groupField);
 
-        if (field === '') {
+        if (groupValue === undefined) {
           continue;
         }
 
-        g[field] = g[field] || {
+        g[groupValue] = g[groupValue] || {
           _childs: []
         };
-        g[field]._groupName = column.title + ':' + field;
+        g[groupValue]._groupName = groupColumn.title + ':' + groupValue;
+        g[groupValue]._opened = true;
 
-        g[field]._childs.push(row);
+        g[groupValue]._childs.push(row);
       }
 
-      var result = [];
+      var groupedModel = [];
       var j = 0;
 
       for (var prop in g) {
-        g[prop]._opened = this.groupsOpen[j] === undefined ? true : this.groupsOpen[j];
-        j++;
-        result.push(g[prop]);
+        groupedModel.push(g[prop]);
       }
 
-      return result;
+      return groupedModel;
     }
   }, {
     key: "getTheme",
@@ -254,90 +333,60 @@ function (_Component) {
       }, this.props.theme);
     }
   }, {
-    key: "compaireFields",
-    value: function compaireFields(a, b) {
-      if (Array.isArray(a)) {
-        if (!Array.isArray(b)) {
-          return false;
-        }
-
-        if (b.length !== a.length) {
-          return false;
-        }
-
-        for (var i = 0; i < b.length; i++) {
-          if (b[i] !== a[i]) {
-            return false;
-          }
-        }
-
-        return true;
-      } else {
-        return a === b;
-      }
+    key: "compaire",
+    value: function compaire(a, b) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+  }, {
+    key: "onchange",
+    value: function onchange(obj) {
+      this.setState(obj);
     }
   }, {
     key: "render",
     value: function render() {
       var _this4 = this;
 
-      var _this$props3 = this.props,
-          dataset = _this$props3.dataset,
-          groupField = _this$props3.groupField,
-          rtl = _this$props3.rtl,
-          onchange = _this$props3.onchange;
-      var columns = this.props.columns;
-      var model = this.state.model;
+      var _this$props4 = this.props,
+          dataset = _this$props4.dataset,
+          groupField = _this$props4.groupField,
+          rtl = _this$props4.rtl;
+      var _this$state = this.state,
+          model = _this$state.model,
+          columns = _this$state.columns;
 
       if (!columns || !model || !columns.length || !model.length) {
         return '';
       }
 
+      var _this$getSize = this.getSize(),
+          size = _this$getSize.size,
+          total = _this$getSize.total;
+
       var contextValue = { ...this.props
       };
       contextValue = _jquery.default.extend({}, contextValue, {
+        model: model,
+        columns: columns,
+        onchange: this.onchange.bind(this),
+        originalModel: this.props.model,
+        originalColumns: this.props.columns,
         theme: this.getTheme(),
-        model: this.getModel(model),
-        originalModel: model,
-        originalColumns: columns,
-        columns: columns.filter(function (column, i) {
-          column.order = i;
-
-          if (!groupField) {
-            return true;
-          }
-
-          return !_this4.compaireFields(column.field, groupField);
-        }),
-        size: this.getSize(),
-        total: this.getTotal(),
+        size: size,
+        total: total,
         getValueByDataset: this.getValueByDataset.bind(this),
-        getModel: this.getModel.bind(this),
+        setValueByDataset: this.setValueByDataset.bind(this),
         getColumn: this.getColumn.bind(this),
         getValue: this.getValue.bind(this),
-        compaireFields: this.compaireFields.bind(this),
-        onToggle: function onToggle(model) {
-          _this4.setGroupsOpen(model);
-
-          _this4.setState({
-            model: model
-          });
-        },
-        onCheck: function onCheck(row, value, context) {
-          _this4.setValueByDataset(row, value, dataset._checked);
-
-          onchange({
-            model: _this4.state.model
-          }, context);
-        },
+        compaire: this.compaire.bind(this),
         onGroupCheck: function onGroupCheck(row, value, context) {
           for (var i = 0; i < row._childs.length; i++) {
             _this4.setValueByDataset(row._childs[i], value, dataset._checked);
           }
 
-          onchange({
+          _this4.onchange({
             model: _this4.state.model
-          }, context);
+          });
         }
       });
       return _react.default.createElement(GridContext.Provider, {
@@ -350,10 +399,28 @@ function (_Component) {
   }], [{
     key: "getDerivedStateFromProps",
     value: function getDerivedStateFromProps(props, state) {
-      var s = {
-        model: props.model
-      };
-      return s;
+      var prevModel = state.prevModel || {};
+      var prevColumns = state.prevColumns || {};
+      var isPropsChanged = false;
+      var changeObject = {};
+
+      if (JSON.stringify(prevModel) !== JSON.stringify(props.model)) {
+        isPropsChanged = true;
+        changeObject.model = state.getModel(props.model);
+        changeObject.prevModel = props.model;
+      }
+
+      if (JSON.stringify(prevColumns) !== JSON.stringify(props.columns)) {
+        isPropsChanged = true;
+        changeObject.columns = state.getColumns(props.columns);
+        changeObject.prevColumns = props.columns;
+      }
+
+      if (isPropsChanged) {
+        return changeObject;
+      }
+
+      return null;
     }
   }]);
 
@@ -394,11 +461,9 @@ function (_Component2) {
   }, {
     key: "render",
     value: function render() {
-      var checkField = this.context.checkField;
-      var columns = (checkField ? [{
-        width: 30,
-        resizable: false
-      }] : []).concat(this.context.columns);
+      var _this$context2 = this.context,
+          checkField = _this$context2.checkField,
+          columns = _this$context2.columns;
       var titles = columns.map(function (column, i) {
         return _react.default.createElement(GridTitle, {
           column: column,
@@ -452,36 +517,35 @@ function (_Component3) {
         return;
       }
 
-      var _this5$context = _this5.context,
-          columns = _this5$context.originalColumns,
-          onchange = _this5$context.onchange;
-
       if (so.from === so.to) {
         return;
       }
 
       ;
+      var _this5$context = _this5.context,
+          columns = _this5$context.columns,
+          onchange = _this5$context.onchange;
       var temp = columns[so.from];
       columns[so.from] = columns[so.to];
       columns[so.to] = temp;
       onchange({
         columns: columns
-      }, _this5.context);
+      });
     });
 
     _defineProperty(_assertThisInitialized(_this5), "resizeUp", function (e) {
+      (0, _jquery.default)(window).off("mousemove", _this5.resizeMouseMove);
+      (0, _jquery.default)(window).off("mouseup", _this5.resizeMouseUp);
       var _this5$context2 = _this5.context,
           onchange = _this5$context2.onchange,
-          originalColumns = _this5$context2.originalColumns;
+          columns = _this5$context2.columns;
       var _this5$startOffset2 = _this5.startOffset,
           column = _this5$startOffset2.column,
           newWidth = _this5$startOffset2.newWidth;
       column.width = newWidth;
       onchange({
-        columns: originalColumns
-      }, _this5.context);
-      (0, _jquery.default)(window).off("mousemove", _this5.resizeMouseMove);
-      (0, _jquery.default)(window).off("mouseup", _this5.resizeMouseUp);
+        columns: columns
+      });
     });
 
     _defineProperty(_assertThisInitialized(_this5), "resizeMove", function (e) {
@@ -533,26 +597,27 @@ function (_Component3) {
 
       if (e.button === 2) return;
 
-      if (column.order === undefined) {
+      if (column.cellsClassName === 'grid-cell-checkbox') {
         return;
-      }
+      } //شرط نادیده گرفتن ستون چک باکس
+
 
       var dom = (0, _jquery.default)(e.target);
       this.startOffset = {
-        from: column.order,
+        from: parseInt(dom.attr('data-column-index')),
         width: dom.width(),
         height: dom.height()
       };
-      (0, _jquery.default)("body").append(this.getShadow(column.title, e));
+      (0, _jquery.default)("body").append(this.getShadow(column, e));
       (0, _jquery.default)(window).on("mousemove", this.moveMove);
       (0, _jquery.default)(window).on("mouseup", this.moveUp);
       (0, _jquery.default)('.move-handle').on("mouseenter", function (e) {
-        _this6.startOffset.to = parseInt((0, _jquery.default)(e.target).attr('data-index'));
+        _this6.startOffset.to = parseInt((0, _jquery.default)(e.target).attr('data-column-index'));
       });
     }
   }, {
     key: "getShadow",
-    value: function getShadow(title, e) {
+    value: function getShadow(column, e) {
       var _this$context$theme = this.context.theme,
           headerBackground = _this$context$theme.headerBackground,
           borderColor = _this$context$theme.borderColor;
@@ -560,7 +625,7 @@ function (_Component3) {
           width = _this$startOffset.width,
           height = _this$startOffset.height;
       var style = "width:".concat(width, "px;left:").concat(e.clientX - width / 2, "px;top:").concat(e.clientY - (height + 2), "px;background:").concat(headerBackground, ";border:1px solid ").concat(borderColor, ";z-index:100;font-size:11px;");
-      return " \n    <div class=\"grid-title grid-title-shadow\" style=\"".concat(style, "\">\n      ").concat(title, "\n    </div>");
+      return " \n    <div class=\"grid-title grid-title-shadow\" style=\"".concat(style, "\">\n      ").concat(column.title, "\n    </div>");
     }
   }, {
     key: "resizeDown",
@@ -574,7 +639,7 @@ function (_Component3) {
       var gridRows = grid.find('.grid-rows');
       this.startOffset = {
         column: column,
-        index: parseInt(dom.attr('data-index')),
+        index: parseInt(dom.attr('data-column-index')),
         minWidth: column.minWidth || 40,
         width: parseInt(column.width),
         //عرض ستون
@@ -596,22 +661,25 @@ function (_Component3) {
       (0, _jquery.default)(this.dom.current).find('.column-popup').toggle();
     }
   }, {
-    key: "setGroup",
-    value: function setGroup() {}
-  }, {
     key: "render",
     value: function render() {
       var _this7 = this;
 
-      var _this$props4 = this.props,
-          column = _this$props4.column,
-          index = _this$props4.index;
+      var _this$props5 = this.props,
+          column = _this$props5.column,
+          index = _this$props5.index;
       var _column$options = column.options,
           options = _column$options === void 0 ? [] : _column$options;
-      var Options = options.map(function (option) {
+      var _this$context$theme2 = this.context.theme,
+          borderColor = _this$context$theme2.borderColor,
+          cellBackground = _this$context$theme2.cellBackground;
+      var Options = options.map(function (option, i) {
         return _react.default.createElement("li", {
+          key: i,
           className: "column-option".concat(option.checked ? ' checked' : ''),
-          onClick: option.callback,
+          onClick: function onClick() {
+            option.callback(column);
+          },
           "data-value": option.value
         }, option.text);
       });
@@ -621,31 +689,32 @@ function (_Component3) {
         ref: this.dom
       }, _react.default.createElement("div", {
         className: "move-handle",
-        "data-index": column.order,
+        "data-column-index": index,
         onMouseDown: function onMouseDown(e) {
           _this7.moveDown(column, e);
         }
       }, column.title), _react.default.createElement("div", {
         className: "resize-handle",
-        "data-index": index,
+        "data-column-index": index,
         onMouseDown: function onMouseDown(e) {
           _this7.resizeDown(column, e);
         }
-      }), _react.default.createElement("div", {
+      }), Options.length > 0 && _react.default.createElement(_react.Fragment, null, _react.default.createElement("div", {
         className: "column-setting",
-        "data-index": index,
+        "data-column-index": index,
         onMouseDown: function onMouseDown(e) {
           _this7.toggleSetting(column, e);
         }
-      }), Options.length > 0 && _react.default.createElement("ul", {
-        className: "column-popup"
+      }), _react.default.createElement("ul", {
+        className: "column-popup",
+        style: {
+          background: cellBackground,
+          borderColor: borderColor
+        }
       }, _react.default.createElement("li", {
         className: "backdrop",
         onMouseDown: this.toggleSetting.bind(this)
-      }), _react.default.createElement("li", {
-        className: "active",
-        onMouseDown: this.setGroup.bind(this)
-      }, 'Group')));
+      }), Options)));
     }
   }]);
 
@@ -668,9 +737,9 @@ function (_Component4) {
   _createClass(GridRows, [{
     key: "getRows",
     value: function getRows() {
-      var _this$context2 = this.context,
-          model = _this$context2.model,
-          groupField = _this$context2.groupField;
+      var _this$context3 = this.context,
+          model = _this$context3.model,
+          groupField = _this$context3.groupField;
       this.rows = [];
       this._order = 0;
       this.getRowsRecursive(model, groupField ? -1 : 0);
@@ -684,6 +753,7 @@ function (_Component4) {
       for (var i = 0; i < model.length; i++) {
         var row = model[i];
         row._order = this._order;
+        row._inorder = i;
         row._level = level;
         row._opened = row._opened === undefined ? true : row._opened;
         row._childs = getValueByDataset(row, '_childs');
@@ -704,9 +774,9 @@ function (_Component4) {
   }, {
     key: "getStyle",
     value: function getStyle() {
-      var _this$context3 = this.context,
-          theme = _this$context3.theme,
-          total = _this$context3.total;
+      var _this$context4 = this.context,
+          theme = _this$context4.theme,
+          total = _this$context4.total;
       return {
         background: theme.borderColor,
         padding: (theme.borderWidth || 1) + 'px',
@@ -745,9 +815,9 @@ function (_Component5) {
   _createClass(GridRow, [{
     key: "getStyle",
     value: function getStyle() {
-      var _this$context4 = this.context,
-          size = _this$context4.size,
-          theme = _this$context4.theme;
+      var _this$context5 = this.context,
+          size = _this$context5.size,
+          theme = _this$context5.theme;
       var isFirst = this.props.isFirst;
       return {
         gridTemplateColumns: size,
@@ -758,22 +828,17 @@ function (_Component5) {
   }, {
     key: "render",
     value: function render() {
-      var _this$context5 = this.context,
-          columns = _this$context5.columns,
-          checkField = _this$context5.checkField;
+      var _this$context6 = this.context,
+          columns = _this$context6.columns,
+          checkField = _this$context6.checkField;
       var row = this.props.row;
-      var cells = checkField ? [_react.default.createElement(GridCell, {
-        column: "checkbox",
-        row: row,
-        key: "checkbox"
-      })] : [];
-      cells = cells.concat(columns.map(function (column, i) {
+      var cells = columns.map(function (column, i) {
         return _react.default.createElement(GridCell, {
           column: column,
           row: row,
           key: i
         });
-      }));
+      });
       return _react.default.createElement("li", {
         className: "grid-row",
         style: this.getStyle()
@@ -815,9 +880,9 @@ function (_Component6) {
       var _this8 = this;
 
       var row = this.props.row;
-      var _this$context6 = this.context,
-          checkField = _this$context6.checkField,
-          onGroupCheck = _this$context6.onGroupCheck;
+      var _this$context7 = this.context,
+          checkField = _this$context7.checkField,
+          onGroupCheck = _this$context7.onGroupCheck;
       return _react.default.createElement("li", {
         className: "grid-group-row",
         style: this.getStyle()
@@ -867,52 +932,13 @@ function (_Component7) {
   }, {
     key: "getClassName",
     value: function getClassName() {
-      var _this$context7 = this.context,
-          treeField = _this$context7.treeField,
-          compaireFields = _this$context7.compaireFields;
       var column = this.props.column;
-
-      if (column === 'checkbox') {
-        return 'grid-cell grid-cell-checkbox';
-      }
-
-      if (compaireFields(column.field, treeField)) {
-        return 'grid-cell grid-cell-tree';
-      }
-
       return "grid-cell".concat(column.cellsClassName ? ' ' + column.cellsClassName : ' grid-cell-text');
     }
   }, {
     key: "getTemplate",
     value: function getTemplate(row, column) {
-      var _this9 = this;
-
-      var _this$context8 = this.context,
-          treeField = _this$context8.treeField,
-          checkField = _this$context8.checkField,
-          onCheck = _this$context8.onCheck,
-          dataset = _this$context8.dataset,
-          getValue = _this$context8.getValue,
-          compaireFields = _this$context8.compaireFields;
-
-      if (column === 'checkbox') {
-        return _react.default.createElement(GridCheckbox, {
-          disabled: checkField.disabled(row),
-          checked: row[dataset._checked] || false,
-          onchange: function onchange(e) {
-            onCheck(row, e.target.checked, _this9.context);
-          }
-        });
-      }
-
-      if (compaireFields(column.field, treeField)) {
-        return _react.default.createElement(TreeCell, {
-          row: row,
-          column: column,
-          value: getValue(row, column.field)
-        });
-      }
-
+      var getValue = this.context.getValue;
       var value = getValue(row, column.field);
 
       if (!column.template) {
@@ -927,9 +953,9 @@ function (_Component7) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props5 = this.props,
-          row = _this$props5.row,
-          column = _this$props5.column;
+      var _this$props6 = this.props,
+          row = _this$props6.row,
+          column = _this$props6.column;
       return _react.default.createElement("div", {
         className: this.getClassName(),
         style: this.getStyle()
@@ -963,9 +989,9 @@ function (_Component8) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props6 = this.props,
-          row = _this$props6.row,
-          value = _this$props6.value;
+      var _this$props7 = this.props,
+          row = _this$props7.row,
+          value = _this$props7.value;
       return _react.default.createElement("div", {
         className: "grid-tree-cell",
         style: this.getStyle()
@@ -1033,9 +1059,9 @@ function (_Component10) {
   }, {
     key: "click",
     value: function click() {
-      var _this$context9 = this.context,
-          onToggle = _this$context9.onToggle,
-          model = _this$context9.model;
+      var _this$context8 = this.context,
+          onchange = _this$context8.onchange,
+          model = _this$context8.model;
       var row = this.props.row;
 
       if (!row._childs || !row._childs.length) {
@@ -1043,7 +1069,9 @@ function (_Component10) {
       }
 
       row._opened = !row._opened;
-      onToggle(model);
+      onchange({
+        model: model
+      });
     }
   }, {
     key: "render",
@@ -1080,9 +1108,9 @@ function (_Component11) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props7 = this.props,
-          checked = _this$props7.checked,
-          disabled = _this$props7.disabled;
+      var _this$props8 = this.props,
+          checked = _this$props8.checked,
+          disabled = _this$props8.disabled;
       return _react.default.createElement("input", {
         type: "checkbox",
         onChange: this.change.bind(this),

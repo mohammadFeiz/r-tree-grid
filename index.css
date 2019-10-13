@@ -236,10 +236,10 @@
   position:absolute;
   top:100%;
   padding:0;
-  border:1px solid #ddd;
+  padding-right:8px;
+  border:1px solid;
   box-shadow:4px 4px 10px 0 rgba(20,20,20,.2);
   margin:0;
-  width:80px;
   display:none;
 }
 .column-popup li{
@@ -247,14 +247,16 @@
   list-style:none;
   padding:0 6px;
   z-index:10;
-  background:#fff;
-  
 }
-.column-popup li.active:before{
+.column-popup li:before{
   content:'\2714';
-  width:24px;
+  width:16px;
   display: inline-block;
   text-align:center;
+  opacity:0;
+}
+.column-popup li.checked:before{
+  opacity:1;
 }
 .column-popup .backdrop{
   background: none;

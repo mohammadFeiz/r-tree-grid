@@ -1,7 +1,7 @@
 {
   "name": "r-tree-grid",
   "email": "feiz.ms@gmail.com",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "react tree grid.",
   "main": "index.js",
   "scripts": {
