@@ -53,6 +53,10 @@ function (_Component) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Grid).call(this, props));
     _this.state = {
+      model: _this.getModel(_this.props.model),
+      columns: _this.getColumns(_this.props.columns),
+      prevModel: _this.props.model,
+      prevColumns: _this.props.columns,
       getModel: _this.getModel.bind(_assertThisInitialized(_this)),
       getColumns: _this.getColumns.bind(_assertThisInitialized(_this))
     };
@@ -341,6 +345,10 @@ function (_Component) {
     key: "onchange",
     value: function onchange(obj) {
       this.setState(obj);
+
+      if (this.props.onchange) {
+        this.props.onchange(obj);
+      }
     }
   }, {
     key: "render",
@@ -399,20 +407,20 @@ function (_Component) {
   }], [{
     key: "getDerivedStateFromProps",
     value: function getDerivedStateFromProps(props, state) {
-      var prevModel = state.prevModel || {};
-      var prevColumns = state.prevColumns || {};
+      var prevModel = state.prevModel;
+      var prevColumns = state.prevColumns;
       var isPropsChanged = false;
       var changeObject = {};
 
       if (JSON.stringify(prevModel) !== JSON.stringify(props.model)) {
         isPropsChanged = true;
-        changeObject.model = state.getModel(props.model);
+        changeObject.model = props.model;
         changeObject.prevModel = props.model;
       }
 
       if (JSON.stringify(prevColumns) !== JSON.stringify(props.columns)) {
         isPropsChanged = true;
-        changeObject.columns = state.getColumns(props.columns);
+        changeObject.columns = props.columns;
         changeObject.prevColumns = props.columns;
       }
 
