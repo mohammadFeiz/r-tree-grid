@@ -13,7 +13,7 @@ export default class Grid extends Component{
     this.theme = this.getTheme(this.props.theme);
   }
   getTheme(theme){
-    return $.extend({},{borderColor:'#ddd',borderWidth:1,cellBackground:'#fff',headerBackground:'#eee',rowHeight:30,},theme);
+    return $.extend({},{background:'#fff',borderColor:'#ddd',borderWidth:1,cellBackground:'#fff',headerBackground:'#eee',rowHeight:30,},theme);
   }
   changeGroupsOpen(index){
     this.groupsOpen['g' + index] = !this.groupsOpen['g' + index];
@@ -303,7 +303,7 @@ export class GridContainer extends Component{
     var size = Columns.map((column)=>{
       let width = typeof column.width === 'function'?column.width():column.width;
       total += width;
-      return width?width + 'px':'auto'
+      return width?width + 'px':'auto';
     });
     return {size:size.join(' '),total:total + ((columns.length + 1) * (borderWidth))};
   }
@@ -367,7 +367,7 @@ export class GridContainer extends Component{
   }
 }
 GridContainer.defaultProps = {
-  theme:{},selectable:false,dataset:{}
+  theme:{},selectable:false,dataset:{},keyboard:{}
 }
 
 export class GridHeader extends Component{
@@ -617,10 +617,13 @@ export class GridRows extends Component{
   }
   render(){
     var rows = this.getRows();
+    var {theme} = this.context;
+    var {borderWidth,background} = theme;
     return(
-      <ul className="grid-rows" style={this.getStyle()}>
+      <div className="grid-rows" style={this.getStyle()}>
         {rows}
-      </ul>
+        <div className='grid-background' style={{flex:1,background,marginTop:borderWidth}}></div>
+      </div>
     );
   }
 }
@@ -643,10 +646,10 @@ export class GridRow extends Component{
       return <GridCell column={column} row={row} key={i} rowIndex={row._order} colIndex={i}/> 
     })
     return(
-      <li className={`grid-row${isActived(rowIndex,null,'row')?' actived':''}`} style={this.getStyle()} data-row-index={rowIndex}>
+      <div className={`grid-row${isActived(rowIndex,null,'row')?' actived':''}`} style={this.getStyle()} data-row-index={rowIndex}>
         {checkField && <GridCell column={checkboxColumn} row={row} key={-1}/>}
         {cells}
-      </li>
+      </div>
     );
   }
 }
@@ -673,7 +676,7 @@ export class GroupRow extends Component{
     var {row,rowIndex} = this.props;
     var {checkField,onGroupCheck,group,isSelected} = this.context;
     return(
-      <li 
+      <div 
         className={`grid-group-row${isSelected(rowIndex)?' selected':''}`} 
         style={this.getStyle()} 
         data-group-index={row.groupIndex} 
@@ -698,7 +701,7 @@ export class GroupRow extends Component{
           }
           <GridText text={row._groupName}/>
         </div>
-      </li>
+      </div>
     );
   }
 }
@@ -727,9 +730,8 @@ export class GridCell extends Component{
     className += isSelected(rowIndex,colIndex)?' selected':'';
     return className;
   }
-  getTemplate(row,column){
+  getTemplate(row,column,value){
     var {treeTemplate} = this.context; 
-    var value = getValueByField(row,column.field);
     if(column.treeMode){
       return treeTemplate(value,{row,column},this.context);
     }
@@ -745,9 +747,10 @@ export class GridCell extends Component{
   }
   render(){
     var {row,column,colIndex} = this.props;
+    var value = getValueByField(row,column.field);
     return(
-      <div className={this.getClassName()} style={this.getStyle()} data-col-index={colIndex} tabIndex={0} onClick={this.click.bind(this)}>
-        {this.getTemplate(row,column)}
+      <div title={column.template?undefined:value} className={this.getClassName()} style={this.getStyle()} data-col-index={colIndex} tabIndex={0} onClick={this.click.bind(this)}>
+        {this.getTemplate(row,column,value)}
       </div>
     );
   }

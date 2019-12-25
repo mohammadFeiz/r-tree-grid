@@ -81,6 +81,7 @@ function (_Component) {
     key: "getTheme",
     value: function getTheme(theme) {
       return _jquery.default.extend({}, {
+        background: '#fff',
         borderColor: '#ddd',
         borderWidth: 1,
         cellBackground: '#fff',
@@ -674,7 +675,8 @@ exports.GridContainer = GridContainer;
 GridContainer.defaultProps = {
   theme: {},
   selectable: false,
-  dataset: {}
+  dataset: {},
+  keyboard: {}
 };
 
 var GridHeader =
@@ -1057,10 +1059,20 @@ function (_Component5) {
     key: "render",
     value: function render() {
       var rows = this.getRows();
-      return _react.default.createElement("ul", {
+      var theme = this.context.theme;
+      var borderWidth = theme.borderWidth,
+          background = theme.background;
+      return _react.default.createElement("div", {
         className: "grid-rows",
         style: this.getStyle()
-      }, rows);
+      }, rows, _react.default.createElement("div", {
+        className: "grid-background",
+        style: {
+          flex: 1,
+          background: background,
+          marginTop: borderWidth
+        }
+      }));
     }
   }]);
 
@@ -1115,7 +1127,7 @@ function (_Component6) {
           colIndex: i
         });
       });
-      return _react.default.createElement("li", {
+      return _react.default.createElement("div", {
         className: "grid-row".concat(isActived(rowIndex, null, 'row') ? ' actived' : ''),
         style: this.getStyle(),
         "data-row-index": rowIndex
@@ -1182,7 +1194,7 @@ function (_Component7) {
           onGroupCheck = _this$context8.onGroupCheck,
           group = _this$context8.group,
           isSelected = _this$context8.isSelected;
-      return _react.default.createElement("li", {
+      return _react.default.createElement("div", {
         className: "grid-group-row".concat(isSelected(rowIndex) ? ' selected' : ''),
         style: this.getStyle(),
         "data-group-index": row.groupIndex,
@@ -1257,9 +1269,8 @@ function (_Component8) {
     }
   }, {
     key: "getTemplate",
-    value: function getTemplate(row, column) {
+    value: function getTemplate(row, column, value) {
       var treeTemplate = this.context.treeTemplate;
-      var value = getValueByField(row, column.field);
 
       if (column.treeMode) {
         return treeTemplate(value, {
@@ -1305,13 +1316,15 @@ function (_Component8) {
           row = _this$props14.row,
           column = _this$props14.column,
           colIndex = _this$props14.colIndex;
+      var value = getValueByField(row, column.field);
       return _react.default.createElement("div", {
+        title: column.template ? undefined : value,
         className: this.getClassName(),
         style: this.getStyle(),
         "data-col-index": colIndex,
         tabIndex: 0,
         onClick: this.click.bind(this)
-      }, this.getTemplate(row, column));
+      }, this.getTemplate(row, column, value));
     }
   }]);
 

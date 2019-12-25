@@ -20,6 +20,8 @@
   padding:0;
   position:absolute;
   font-family:inherit;
+  display:flex;
+  flex-direction:column;
 }
 .grid-container.rtl{
   direction:rtl;
@@ -55,6 +57,9 @@
     margin:0;
     position:relative;
     min-width:fit-content;
+    display:flex;
+    flex-direction:column;
+    flex:1;
 }
 .grid-rows .grid-row{
   display:grid;
