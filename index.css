@@ -8,14 +8,18 @@
   width:100%;
   font-family:inherit;
   position:relative;
+  font-size:12px;
+  color:#222;
+}
+.grid:focus{
+  outline:none;
 }
 .grid-container{
   /* font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; */
   height:100%;
   overflow:auto;
   width:100%;
-  border:2px solid;
-  color:#111;
+  border:0px solid;
   margin:0;
   padding:0;
   position:absolute;
@@ -51,9 +55,7 @@
     text-align:center;
   }
 
-  
 .grid-rows{
-    font-size:10px;
     margin:0;
     position:relative;
     min-width:fit-content;
@@ -115,12 +117,13 @@
 .grid-checkbox input{
   position:relative;
 }
-
-
   .grid-rows .grid-row .grid-cell{
     position:relative;
     white-space: nowrap;
-    padding:0 8px
+    padding:0 8px;
+  }
+  .grid-rows .grid-row .grid-cell:focus{
+    outline:none;
   }
   .grid-rows .grid-row .grid-cell.grid-cell-text{
     text-align:center;
@@ -143,14 +146,12 @@
 }
 .grid-cell-checkbox input{
   position:relative;
-  top:calc(50% - 10px);
 }
 .grid-cell.selected,.grid-group-row.selected{
-  box-shadow:inset 0px 0px 0px 2px blue;
-  border-radius:5px;
+  box-shadow:inset 0px 0px 0px 2px rgb(68, 68, 255);
+  border-radius:1px;
 }
 .grid-row.actived .grid-cell{
-  background:lightblue !important;
 }
 
 .grid-container .grid-tree-cell{
@@ -161,6 +162,7 @@
   overflow:hidden;
   position:relative;
   white-space: nowrap;
+  display:flex;
   margin:0;
   top:calc(50% - 12px);
 }
@@ -171,9 +173,11 @@
 
 
 .grid-container .grid-toggle-icon{
-  width:16px;
+  width:20px;
   height:24px;
-  line-height:24px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
   text-align: center;
   float:left;
   cursor:pointer;
@@ -183,7 +187,7 @@
   float:right;
 }
 .grid-container .grid-icon{
-  width:16px;
+  width:20px;
   height:24px;
   font-size:12px;
   line-height:24px;
@@ -196,17 +200,28 @@
 
 
 .grid-container .grid-text{
+  flex:1;
   height:24px;
   line-height:24px;
+  padding:0 4px;
+  overflow:hidden;
+  text-overflow: ellipsis;
   /* background:yellow; */
 }
 
-
+.grid-container .grid-toggle-icon:after{
+  margin-top:3px;
+  font-size:9px;
+}
 .grid-container .grid-toggle-icon.opened:after{
     content:'\25BC	';
+    transform: scaleX(1.5);
+  
   }
 .grid-container .grid-toggle-icon.closed:after{
   content:'\25BA';
+  transform: scaleY(1.5);
+  
 }
 .grid-container.rtl .grid-toggle-icon.closed:after{
   content:'\25C0';
@@ -260,6 +275,8 @@
   text-align:center;
   line-height:24px;
   cursor:pointer;
+  opacity:.5;
+  margin:0 8px
 }
 .grid-container.rtl .column-setting{
   left:unset;
@@ -306,13 +323,65 @@
 }
  .inline-edit-text{
    position:absolute;
-   width:calc(100% - 4px);
+   width:calc(100% - 12px);
    height:20px;
    border:none;
    top:calc(50% - 11px);
-   left:2px;
+   left:6px;
    text-align:center;
    font-size:10px;
    
  }
+ .inline-edit-select{
+   position:absolute;
+   width:calc(100% - 12px);
+   height:20px;
+   border:none;
+   top:calc(50% - 11px);
+   left:6px;
+   text-align:center;
+   font-size:10px;
+ }
+ .inline-edit-select option{
+    padding:8px !important;
+    height:50px !important;
+    margin:10px;
+    font-size:12px;
+    
+ }
 
+.grid-cell-error{
+  position:absolute;
+  width:10px;
+  height:10px;
+  left:5px;
+  top:5px;
+  background:red;
+  font-size:10px;
+  color:#fff;
+  display:flex;
+  justify-content: center;
+  align-items:center;
+  border:1px solid red;
+  border-radius:100%;
+}
+.grid-cell-error:before{
+  content:'\2139';
+}
+.grid-cell-add{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+}
+.add-icon{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  font-size:12px;
+  position:relative;
+  width:24px;
+  height:24px;
+}
+.add-icon:after{
+  content:'\271a';
+}
