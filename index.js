@@ -1343,8 +1343,8 @@ var GridTitle = /*#__PURE__*/function (_Component4) {
       var column = this.props.column;
       return {
         background: theme.headerBackground,
-        height: theme.rowHeight + 'px',
-        lineHeight: theme.rowHeight + 'px',
+        height: '36px',
+        lineHeight: '36px',
         boxShadow: "0 0 0 ".concat(theme.borderWidth || 1, "px ").concat(theme.borderColor),
         minWidth: column.minWidth ? column.minWidth + 'px' : undefined
       };

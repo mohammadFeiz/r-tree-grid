@@ -684,8 +684,8 @@ export class GridTitle extends Component{
     var {column} = this.props;
     return {
       background:theme.headerBackground,
-      height:theme.rowHeight + 'px',
-      lineHeight:theme.rowHeight + 'px',
+      height:'36px',
+      lineHeight:'36px',
       boxShadow:`0 0 0 ${theme.borderWidth || 1}px ${theme.borderColor}`,
       minWidth:column.minWidth?column.minWidth + 'px':undefined,
     }
