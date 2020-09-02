@@ -1,7 +1,7 @@
 {
   "name": "r-tree-grid",
   "email": "feiz.ms@gmail.com",
-  "version": "2.0.2",
+  "version": "3.0.0",
   "description": "react tree grid.",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mohammadFeiz/r-tree-grid.git"
+  },
+  "dependencies": {
+    "jquery": "^3.4.1",
+    "r-dropdown-button": "^1.0.10",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0"
   },
   "keywords": [],
   "author": "mohammad sharif feiz",
