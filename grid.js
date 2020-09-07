@@ -1116,7 +1116,7 @@ export class GridCell extends Component{
           style={{textAlign:'center',padding:'0 6px',boxSizing:'border-box'}}
           defaultValue={value}
           className='inline-edit inline-edit-text'
-          onChange={(e)=>getInlineChanges(colIndex,e.target.value)}
+          onChange={(e)=>getInlineChanges(colIndex,parseFloat(e.target.value))}
         />
       )
     }

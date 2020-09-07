@@ -2267,7 +2267,7 @@ var GridCell = /*#__PURE__*/function (_Component13) {
           defaultValue: value,
           className: "inline-edit inline-edit-text",
           onChange: function onChange(e) {
-            return getInlineChanges(colIndex, e.target.value);
+            return getInlineChanges(colIndex, parseFloat(e.target.value));
           }
         });
       }
