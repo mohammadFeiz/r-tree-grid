@@ -225,6 +225,7 @@ export default class Grid extends Component{
                 dataSplitter={1}
                 checkField={false}
                 addField={false}
+                removeField={false}
                 style={{flex:1}}
                 group={group?{fields:group.fields,title:group.title,collapsible:false}:false}
               />
@@ -429,6 +430,22 @@ export class GridContainer extends Component{
       }
     }
   }
+  getRemoveColumn(){
+    var {removeField} = this.props;
+    if(!removeField){return false;}
+    return {
+      width:30,resizable:false,movable:false,className:'grid-cell-remove',isDefault:true,
+      template:(value,{row,column},context)=>{
+        if(removeField.enable === false){return '';}
+        if(typeof removeField.enable === 'function'){
+          if(removeField.enable(row) === false){return '';}
+        }
+        return <div className='remove-icon' onClick={()=>{
+          this.remove(row)
+        }}></div>
+      }
+    }
+  }
   async add(row){
     var {onChange,dataType,model,dataset,addField} = this.props;
     var def = await addField.getDefault(row);
@@ -437,26 +454,61 @@ export class GridContainer extends Component{
       onChange({model:obj},this.props)
     }
     else{
-      var childs = getValueByField(row,dataset._childs);
-      if(!childs){
-        setValueByField(row,dataset._childs,[])
-        childs = getValueByField(row,dataset._childs);
+      if(addField.callback){
+        var parents = row._getParents();
+        var indexes = parents.map((p)=>p._inorder).concat(row._inorder)
+        addField.callback({indexes,row,defaultRow:def})
       }
-      childs.push(def);
-      onChange({model},this.props)
+      else {
+        var childs = getValueByField(row,dataset._childs);
+        if(!childs){
+          setValueByField(row,dataset._childs,[])
+          childs = getValueByField(row,dataset._childs);
+        }
+        childs.push(def);
+        onChange({model},this.props)
+      }
+      
     }
 
   }
-  
+  async remove(row){
+    var {onChange,dataType,model,dataset,removeField} = this.props;
+    if(dataType === 'flat'){
+      var obj = model.concat([def]);
+      onChange({model:obj},this.props)
+    }
+    else{
+      if(row._level === 0){
+        if(removeField.callback){removeField.callback(row,undefined)}
+        else {
+          model.splice(row._inorder,1);
+          onChange({model},this.props);
+        }
+      }
+      else {
+        var parents = row._getParents();
+        var parent = parents[parents.length - 1];
+        if(removeField.callback){removeField.callback(row,parent)}
+        else{
+          var parentChilds = getValueByField(parent,dataset._childs);
+          parentChilds.splice(row._inorder,1);  
+          onChange({model},this.props);
+        }
+      }
+    }
+  }
   getSize(){
     var {columns,theme,toggleColumns,onChange} = this.props;
     var {borderWidth} = theme;
     var total = 0;
     var checkboxColumn = this.getCheckboxColumn();
     var addColumn = this.getAddColumn();
+    var removeColumn = this.getRemoveColumn();
     checkboxColumn = checkboxColumn?[checkboxColumn]:[]
     addColumn = addColumn?[addColumn]:[]
-    var Columns = checkboxColumn.concat(addColumn,columns);
+    removeColumn = removeColumn?[removeColumn]:[]
+    var Columns = checkboxColumn.concat(addColumn,removeColumn,columns);
     if(toggleColumns){Columns = Columns.filter((column)=>column.opened !== false);}
     var size = Columns.map((column,i)=>{
       let width = typeof column.width === 'function'?column.width():column.width;
@@ -485,6 +537,7 @@ export class GridContainer extends Component{
       select:this.select.bind(this),
       checkboxColumn:this.getCheckboxColumn(),
       addColumn:this.getAddColumn(),
+      removeColumn:this.getRemoveColumn(),
       treeTemplate:this.treeTemplate,
     }
     return(
@@ -593,11 +646,12 @@ export class GridHeader extends Component{
   }
   render(){
     this.colIndex = -1;
-    var {columns,checkboxColumn,addColumn} = this.context;
+    var {columns,checkboxColumn,addColumn,removeColumn} = this.context;
     return(
       <div className="grid-header" style={this.getStyle()}>
         {checkboxColumn && <GridTitle column={checkboxColumn} key={'checkbox-column'} colIndex={false} renderIndex={this.getColIndex(checkboxColumn)}/>}
         {addColumn && <GridTitle column={addColumn} key={'add-column'} colIndex={false} renderIndex={this.getColIndex(addColumn)}/>}
+        {removeColumn && <GridTitle column={removeColumn} key={'remove-column'} colIndex={false} renderIndex={this.getColIndex(removeColumn)}/>}
         {
           columns.map((column,i)=>{
             return (<GridTitle column={column} key={i} colIndex={i} renderIndex={this.getColIndex(column)}/>)
@@ -671,7 +725,7 @@ export class GridMoveHandle extends Component{
     var {column,colIndex} = this.props;
     var {onChange} = this.context;
     if(!onChange || column.opened === false){return;}
-    if(column.className === 'grid-cell-checkbox' || column.className === 'grid-cell-add'){return;}//شرط نادیده گرفتن ستون چک باکس
+    if(column.className === 'grid-cell-checkbox' || column.className === 'grid-cell-add' || column.className === 'grid-cell-remove'){return;}//شرط نادیده گرفتن ستون چک باکس
     var dom = $(e.target);
     this.so = {from:colIndex,width:dom.width(),height:dom.height()};
     $("body").append(this.getShadow(e));
@@ -988,7 +1042,7 @@ export class GridRow extends Component{
     return enable !== false;
   }
   render(){
-    var {columns,checkField,addField,addColumn,checkboxColumn,selected} = this.context;
+    var {columns,checkField,addField,addColumn,removeField,removeColumn,checkboxColumn,selected} = this.context;
     var {row} = this.props;
     var {error} = this.context; 
     var rowSelected = row._order === selected[0];
@@ -1016,8 +1070,9 @@ export class GridRow extends Component{
     }) 
     return(
       <div className={`grid-row`} style={this.getStyle()} data-row-index={row._order}>
-        {checkField && <GridCell column={checkboxColumn} row={row} key={-2}/>}
-        {addField && <GridCell column={addColumn} row={row} key={-1}/>}
+        {checkField && <GridCell column={checkboxColumn} row={row} key={-3}/>}
+        {addField && <GridCell column={addColumn} row={row} key={-2}/>}
+        {removeField && <GridCell column={removeColumn} row={row} key={-1}/>}
         {cells}
       </div>
     );

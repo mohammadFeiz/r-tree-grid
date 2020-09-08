@@ -457,6 +457,7 @@ var Grid = /*#__PURE__*/function (_Component) {
         dataSplitter: 1,
         checkField: false,
         addField: false,
+        removeField: false,
         style: {
           flex: 1
         },
@@ -930,6 +931,46 @@ var GridContainer = /*#__PURE__*/function (_Component4) {
       };
     }
   }, {
+    key: "getRemoveColumn",
+    value: function getRemoveColumn() {
+      var _this8 = this;
+
+      var removeField = this.props.removeField;
+
+      if (!removeField) {
+        return false;
+      }
+
+      return {
+        width: 30,
+        resizable: false,
+        movable: false,
+        className: 'grid-cell-remove',
+        isDefault: true,
+        template: function template(value, _ref5, context) {
+          var row = _ref5.row,
+              column = _ref5.column;
+
+          if (removeField.enable === false) {
+            return '';
+          }
+
+          if (typeof removeField.enable === 'function') {
+            if (removeField.enable(row) === false) {
+              return '';
+            }
+          }
+
+          return /*#__PURE__*/_react.default.createElement("div", {
+            className: "remove-icon",
+            onClick: function onClick() {
+              _this8.remove(row);
+            }
+          });
+        }
+      };
+    }
+  }, {
     key: "add",
     value: async function add(row) {
       var _this$props12 = this.props,
@@ -946,34 +987,91 @@ var GridContainer = /*#__PURE__*/function (_Component4) {
           model: obj
         }, this.props);
       } else {
-        var childs = (0, _functions.getValueByField)(row, dataset._childs);
+        if (addField.callback) {
+          var parents = row._getParents();
 
-        if (!childs) {
-          (0, _functions.setValueByField)(row, dataset._childs, []);
-          childs = (0, _functions.getValueByField)(row, dataset._childs);
+          var indexes = parents.map(function (p) {
+            return p._inorder;
+          }).concat(row._inorder);
+          addField.callback({
+            indexes: indexes,
+            row: row,
+            defaultRow: def
+          });
+        } else {
+          var childs = (0, _functions.getValueByField)(row, dataset._childs);
+
+          if (!childs) {
+            (0, _functions.setValueByField)(row, dataset._childs, []);
+            childs = (0, _functions.getValueByField)(row, dataset._childs);
+          }
+
+          childs.push(def);
+          onChange({
+            model: model
+          }, this.props);
         }
+      }
+    }
+  }, {
+    key: "remove",
+    value: async function remove(row) {
+      var _this$props13 = this.props,
+          onChange = _this$props13.onChange,
+          dataType = _this$props13.dataType,
+          model = _this$props13.model,
+          dataset = _this$props13.dataset,
+          removeField = _this$props13.removeField;
 
-        childs.push(def);
+      if (dataType === 'flat') {
+        var obj = model.concat([def]);
         onChange({
-          model: model
+          model: obj
         }, this.props);
+      } else {
+        if (row._level === 0) {
+          if (removeField.callback) {
+            removeField.callback(row, undefined);
+          } else {
+            model.splice(row._inorder, 1);
+            onChange({
+              model: model
+            }, this.props);
+          }
+        } else {
+          var parents = row._getParents();
+
+          var parent = parents[parents.length - 1];
+
+          if (removeField.callback) {
+            removeField.callback(row, parent);
+          } else {
+            var parentChilds = (0, _functions.getValueByField)(parent, dataset._childs);
+            parentChilds.splice(row._inorder, 1);
+            onChange({
+              model: model
+            }, this.props);
+          }
+        }
       }
     }
   }, {
     key: "getSize",
     value: function getSize() {
-      var _this$props13 = this.props,
-          columns = _this$props13.columns,
-          theme = _this$props13.theme,
-          toggleColumns = _this$props13.toggleColumns,
-          onChange = _this$props13.onChange;
+      var _this$props14 = this.props,
+          columns = _this$props14.columns,
+          theme = _this$props14.theme,
+          toggleColumns = _this$props14.toggleColumns,
+          onChange = _this$props14.onChange;
       var borderWidth = theme.borderWidth;
       var total = 0;
       var checkboxColumn = this.getCheckboxColumn();
       var addColumn = this.getAddColumn();
+      var removeColumn = this.getRemoveColumn();
       checkboxColumn = checkboxColumn ? [checkboxColumn] : [];
       addColumn = addColumn ? [addColumn] : [];
-      var Columns = checkboxColumn.concat(addColumn, columns);
+      removeColumn = removeColumn ? [removeColumn] : [];
+      var Columns = checkboxColumn.concat(addColumn, removeColumn, columns);
 
       if (toggleColumns) {
         Columns = Columns.filter(function (column) {
@@ -999,13 +1097,13 @@ var GridContainer = /*#__PURE__*/function (_Component4) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props14 = this.props,
-          rtl = _this$props14.rtl,
-          dataSplitter = _this$props14.dataSplitter,
-          columns = _this$props14.columns,
-          _this$props14$onChang = _this$props14.onChange,
-          onChange = _this$props14$onChang === void 0 ? false : _this$props14$onChang,
-          style = _this$props14.style;
+      var _this$props15 = this.props,
+          rtl = _this$props15.rtl,
+          dataSplitter = _this$props15.dataSplitter,
+          columns = _this$props15.columns,
+          _this$props15$onChang = _this$props15.onChange,
+          onChange = _this$props15$onChang === void 0 ? false : _this$props15$onChang,
+          style = _this$props15.style;
 
       if (!columns || !columns.length) {
         return '';
@@ -1029,6 +1127,7 @@ var GridContainer = /*#__PURE__*/function (_Component4) {
         select: this.select.bind(this),
         checkboxColumn: this.getCheckboxColumn(),
         addColumn: this.getAddColumn(),
+        removeColumn: this.getRemoveColumn(),
         treeTemplate: this.treeTemplate
       };
       return /*#__PURE__*/_react.default.createElement(GridContext.Provider, {
@@ -1266,13 +1365,14 @@ var GridHeader = /*#__PURE__*/function (_Component5) {
   }, {
     key: "render",
     value: function render() {
-      var _this8 = this;
+      var _this9 = this;
 
       this.colIndex = -1;
       var _this$context = this.context,
           columns = _this$context.columns,
           checkboxColumn = _this$context.checkboxColumn,
-          addColumn = _this$context.addColumn;
+          addColumn = _this$context.addColumn,
+          removeColumn = _this$context.removeColumn;
       return /*#__PURE__*/_react.default.createElement("div", {
         className: "grid-header",
         style: this.getStyle()
@@ -1286,12 +1386,17 @@ var GridHeader = /*#__PURE__*/function (_Component5) {
         key: 'add-column',
         colIndex: false,
         renderIndex: this.getColIndex(addColumn)
+      }), removeColumn && /*#__PURE__*/_react.default.createElement(GridTitle, {
+        column: removeColumn,
+        key: 'remove-column',
+        colIndex: false,
+        renderIndex: this.getColIndex(removeColumn)
       }), columns.map(function (column, i) {
         return /*#__PURE__*/_react.default.createElement(GridTitle, {
           column: column,
           key: i,
           colIndex: i,
-          renderIndex: _this8.getColIndex(column)
+          renderIndex: _this9.getColIndex(column)
         });
       }));
     }
@@ -1310,13 +1415,13 @@ var GridTitle = /*#__PURE__*/function (_Component6) {
   var _super6 = _createSuper(GridTitle);
 
   function GridTitle(props) {
-    var _this9;
+    var _this10;
 
     _classCallCheck(this, GridTitle);
 
-    _this9 = _super6.call(this, props);
-    _this9.dom = /*#__PURE__*/(0, _react.createRef)();
-    return _this9;
+    _this10 = _super6.call(this, props);
+    _this10.dom = /*#__PURE__*/(0, _react.createRef)();
+    return _this10;
   }
 
   _createClass(GridTitle, [{
@@ -1341,9 +1446,9 @@ var GridTitle = /*#__PURE__*/function (_Component6) {
         return;
       }
 
-      var _this$props15 = this.props,
-          column = _this$props15.column,
-          colIndex = _this$props15.colIndex;
+      var _this$props16 = this.props,
+          column = _this$props16.column,
+          colIndex = _this$props16.colIndex;
 
       if (column.opened === false || !column.width || column.width === 'auto') {
         return;
@@ -1360,9 +1465,9 @@ var GridTitle = /*#__PURE__*/function (_Component6) {
       var _this$context3 = this.context,
           columns = _this$context3.columns,
           onChange = _this$context3.onChange;
-      var _this$props16 = this.props,
-          column = _this$props16.column,
-          colIndex = _this$props16.colIndex;
+      var _this$props17 = this.props,
+          column = _this$props17.column,
+          colIndex = _this$props17.colIndex;
       column.opened = true;
       columns.splice(colIndex, 1);
       var lastOpenedIndex = 0;
@@ -1383,11 +1488,11 @@ var GridTitle = /*#__PURE__*/function (_Component6) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props17 = this.props,
-          column = _this$props17.column,
-          _this$props17$colInde = _this$props17.colIndex,
-          colIndex = _this$props17$colInde === void 0 ? false : _this$props17$colInde,
-          renderIndex = _this$props17.renderIndex;
+      var _this$props18 = this.props,
+          column = _this$props18.column,
+          _this$props18$colInde = _this$props18.colIndex,
+          colIndex = _this$props18$colInde === void 0 ? false : _this$props18$colInde,
+          renderIndex = _this$props18.renderIndex;
       var _column$width = column.width,
           width = _column$width === void 0 ? 'auto' : _column$width,
           _column$resizable = column.resizable,
@@ -1454,18 +1559,18 @@ var GridMoveHandle = /*#__PURE__*/function (_Component7) {
   }, {
     key: "mouseDown",
     value: function mouseDown(e) {
-      var _this10 = this;
+      var _this11 = this;
 
-      var _this$props18 = this.props,
-          column = _this$props18.column,
-          colIndex = _this$props18.colIndex;
+      var _this$props19 = this.props,
+          column = _this$props19.column,
+          colIndex = _this$props19.colIndex;
       var onChange = this.context.onChange;
 
       if (!onChange || column.opened === false) {
         return;
       }
 
-      if (column.className === 'grid-cell-checkbox' || column.className === 'grid-cell-add') {
+      if (column.className === 'grid-cell-checkbox' || column.className === 'grid-cell-add' || column.className === 'grid-cell-remove') {
         return;
       } //شرط نادیده گرفتن ستون چک باکس
 
@@ -1480,7 +1585,7 @@ var GridMoveHandle = /*#__PURE__*/function (_Component7) {
       (0, _functions.eventHandler)('window', 'mousemove', _jquery.default.proxy(this.mouseMove, this));
       (0, _functions.eventHandler)('window', 'mouseup', _jquery.default.proxy(this.mouseUp, this));
       (0, _jquery.default)('.grid-move-handle').on("mouseenter", function (e) {
-        _this10.so.to = parseInt((0, _jquery.default)(e.target).attr('data-column-index'));
+        _this11.so.to = parseInt((0, _jquery.default)(e.target).attr('data-column-index'));
       });
     }
   }, {
@@ -1527,11 +1632,11 @@ var GridMoveHandle = /*#__PURE__*/function (_Component7) {
   }, {
     key: "render",
     value: function render() {
-      var _this11 = this;
+      var _this12 = this;
 
-      var _this$props19 = this.props,
-          colIndex = _this$props19.colIndex,
-          column = _this$props19.column;
+      var _this$props20 = this.props,
+          colIndex = _this$props20.colIndex,
+          column = _this$props20.column;
 
       var props = _defineProperty({
         className: 'grid-move-handle',
@@ -1539,7 +1644,7 @@ var GridMoveHandle = /*#__PURE__*/function (_Component7) {
       }, 'ontouchstart' in document.documentElement ? 'onTouchStart' : 'onMouseDown', function (e) {
         if (e.button === 2) return;
 
-        _this11.mouseDown(e);
+        _this12.mouseDown(e);
       });
 
       return /*#__PURE__*/_react.default.createElement("div", props, column.title);
@@ -1559,21 +1664,21 @@ var GridResizeHandle = /*#__PURE__*/function (_Component8) {
   var _super8 = _createSuper(GridResizeHandle);
 
   function GridResizeHandle(props) {
-    var _this12;
+    var _this13;
 
     _classCallCheck(this, GridResizeHandle);
 
-    _this12 = _super8.call(this, props);
-    _this12.dom = /*#__PURE__*/(0, _react.createRef)();
-    return _this12;
+    _this13 = _super8.call(this, props);
+    _this13.dom = /*#__PURE__*/(0, _react.createRef)();
+    return _this13;
   }
 
   _createClass(GridResizeHandle, [{
     key: "mouseDown",
     value: function mouseDown(e) {
-      var _this$props20 = this.props,
-          column = _this$props20.column,
-          disabled = _this$props20.disabled;
+      var _this$props21 = this.props,
+          column = _this$props21.column,
+          disabled = _this$props21.disabled;
 
       if (disabled) {
         return;
@@ -1652,7 +1757,7 @@ var GridResizeHandle = /*#__PURE__*/function (_Component8) {
   }, {
     key: "render",
     value: function render() {
-      var _this13 = this;
+      var _this14 = this;
 
       var disabled = this.props.disabled;
 
@@ -1665,7 +1770,7 @@ var GridResizeHandle = /*#__PURE__*/function (_Component8) {
       }, 'ontouchstart' in document.documentElement ? 'onTouchStart' : 'onMouseDown', function (e) {
         if (e.button === 2) return;
 
-        _this13.mouseDown(e);
+        _this14.mouseDown(e);
       });
 
       return /*#__PURE__*/_react.default.createElement("div", props);
@@ -1685,20 +1790,20 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
   var _super9 = _createSuper(GridFilter);
 
   function GridFilter(props) {
-    var _this14;
+    var _this15;
 
     _classCallCheck(this, GridFilter);
 
-    _this14 = _super9.call(this, props);
-    _this14.dom = /*#__PURE__*/(0, _react.createRef)();
-    return _this14;
+    _this15 = _super9.call(this, props);
+    _this15.dom = /*#__PURE__*/(0, _react.createRef)();
+    return _this15;
   }
 
   _createClass(GridFilter, [{
     key: "getOperators",
-    value: function getOperators(_ref5) {
-      var type = _ref5.type,
-          operators = _ref5.operators;
+    value: function getOperators(_ref6) {
+      var type = _ref6.type,
+          operators = _ref6.operators;
       var translate = this.context.translate;
       var Operators = [{
         value: 'Equal',
@@ -1771,7 +1876,7 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
   }, {
     key: "getBoolean",
     value: function getBoolean(booleanType) {
-      var _this15 = this;
+      var _this16 = this;
 
       var translate = this.context.translate;
       var column = this.props.column;
@@ -1795,7 +1900,7 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
             filter.items.pop();
           }
 
-          _this15.onChange(filter);
+          _this16.onChange(filter);
         }
       }, /*#__PURE__*/_react.default.createElement("option", {
         value: ""
@@ -1807,11 +1912,11 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
     }
   }, {
     key: "getItem",
-    value: function getItem(_ref6, index) {
-      var _this16 = this;
+    value: function getItem(_ref7, index) {
+      var _this17 = this;
 
-      var operator = _ref6.operator,
-          value = _ref6.value;
+      var operator = _ref7.operator,
+          value = _ref7.value;
       var column = this.props.column;
       var filter = { ...column.filter
       };
@@ -1827,13 +1932,13 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
 
           if (!filter.items[index]) {
             filter.items.push({
-              operator: _this16.defaultOperator
+              operator: _this17.defaultOperator
             });
           }
 
           filter.items[index].operator = e.target.value;
 
-          _this16.onChange(filter);
+          _this17.onChange(filter);
         }
       }, this.operators), !template && /*#__PURE__*/_react.default.createElement("input", {
         className: "grid-filter-value",
@@ -1841,19 +1946,19 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
         defaultValue: value,
         onChange: function onChange(e) {
           var val = e.target.value;
-          clearTimeout(_this16.timeOut);
-          _this16.timeOut = setTimeout(function () {
+          clearTimeout(_this17.timeOut);
+          _this17.timeOut = setTimeout(function () {
             filter.items = filter.items || [];
 
             if (!filter.items[index]) {
               filter.items.push({
-                operator: _this16.defaultOperator
+                operator: _this17.defaultOperator
               });
             }
 
             filter.items[index].value = val;
 
-            _this16.onChange(filter);
+            _this17.onChange(filter);
           }, 1000);
         }
       }), template && template(value, function (val) {
@@ -1861,22 +1966,22 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
 
         if (!filter.items[index]) {
           filter.items.push({
-            operator: _this16.defaultOperator
+            operator: _this17.defaultOperator
           });
         }
 
         filter.items[index].value = val;
 
-        _this16.onChange(filter);
+        _this17.onChange(filter);
       }));
     }
   }, {
     key: "getPopup",
-    value: function getPopup(_ref7) {
-      var booleanType = _ref7.booleanType,
-          type = _ref7.type,
-          _ref7$items = _ref7.items,
-          items = _ref7$items === void 0 ? [] : _ref7$items;
+    value: function getPopup(_ref8) {
+      var booleanType = _ref8.booleanType,
+          type = _ref8.type,
+          _ref8$items = _ref8.items,
+          items = _ref8$items === void 0 ? [] : _ref8$items;
       var translate = this.context.translate;
       var firstItem = items[0] || {
         operator: this.defaultOperator
@@ -1910,7 +2015,7 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
   }, {
     key: "render",
     value: function render() {
-      var _this17 = this;
+      var _this18 = this;
 
       var column = this.props.column;
       var _column$filter = column.filter,
@@ -1942,7 +2047,7 @@ var GridFilter = /*#__PURE__*/function (_Component9) {
         open: open,
         rtl: rtl,
         items: function items() {
-          return _this17.getPopup(filter);
+          return _this18.getPopup(filter);
         }
       });
     }
@@ -2046,13 +2151,15 @@ var GridRow = /*#__PURE__*/function (_Component11) {
   }, {
     key: "render",
     value: function render() {
-      var _this18 = this;
+      var _this19 = this;
 
       var _this$context10 = this.context,
           columns = _this$context10.columns,
           checkField = _this$context10.checkField,
           addField = _this$context10.addField,
           addColumn = _this$context10.addColumn,
+          removeField = _this$context10.removeField,
+          removeColumn = _this$context10.removeColumn,
           checkboxColumn = _this$context10.checkboxColumn,
           selected = _this$context10.selected;
       var row = this.props.row;
@@ -2073,7 +2180,7 @@ var GridRow = /*#__PURE__*/function (_Component11) {
 
         if (rowSelected) {
           cellSelected = i === selected[1];
-          enableInlineEdit = _this18.isEnableInlineEdit(row, column);
+          enableInlineEdit = _this19.isEnableInlineEdit(row, column);
         }
 
         return /*#__PURE__*/_react.default.createElement(GridCell, {
@@ -2095,9 +2202,13 @@ var GridRow = /*#__PURE__*/function (_Component11) {
       }, checkField && /*#__PURE__*/_react.default.createElement(GridCell, {
         column: checkboxColumn,
         row: row,
-        key: -2
+        key: -3
       }), addField && /*#__PURE__*/_react.default.createElement(GridCell, {
         column: addColumn,
+        row: row,
+        key: -2
+      }), removeField && /*#__PURE__*/_react.default.createElement(GridCell, {
+        column: removeColumn,
         row: row,
         key: -1
       }), cells);
@@ -2117,13 +2228,13 @@ var GroupRow = /*#__PURE__*/function (_Component12) {
   var _super12 = _createSuper(GroupRow);
 
   function GroupRow(props) {
-    var _this19;
+    var _this20;
 
     _classCallCheck(this, GroupRow);
 
-    _this19 = _super12.call(this, props);
-    _this19.dom = /*#__PURE__*/(0, _react.createRef)();
-    return _this19;
+    _this20 = _super12.call(this, props);
+    _this20.dom = /*#__PURE__*/(0, _react.createRef)();
+    return _this20;
   } // componentDidUpdate(){
   //   if(this.rowSelected){
   //     //حتما باید گرید فوکوس شود تا کیبرد از کار نیفتد
@@ -2135,10 +2246,10 @@ var GroupRow = /*#__PURE__*/function (_Component12) {
   _createClass(GroupRow, [{
     key: "changeOpened",
     value: function changeOpened() {
-      var _this$props21 = this.props,
-          _groupField = _this$props21._groupField,
-          _parentField = _this$props21._parentField,
-          toggle = _this$props21.toggle;
+      var _this$props22 = this.props,
+          _groupField = _this$props22._groupField,
+          _parentField = _this$props22._parentField,
+          toggle = _this$props22.toggle;
       toggle(_parentField + _groupField);
     }
   }, {
@@ -2151,11 +2262,11 @@ var GroupRow = /*#__PURE__*/function (_Component12) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props22 = this.props,
-          index = _this$props22.index,
-          _checked = _this$props22._checked,
-          _groupField = _this$props22._groupField,
-          opened = _this$props22.opened;
+      var _this$props23 = this.props,
+          index = _this$props23.index,
+          _checked = _this$props23._checked,
+          _groupField = _this$props23._groupField,
+          opened = _this$props23.opened;
       var _this$context11 = this.context,
           checkField = _this$context11.checkField,
           group = _this$context11.group;
@@ -2192,21 +2303,21 @@ var GridCell = /*#__PURE__*/function (_Component13) {
   var _super13 = _createSuper(GridCell);
 
   function GridCell(props) {
-    var _this20;
+    var _this21;
 
     _classCallCheck(this, GridCell);
 
-    _this20 = _super13.call(this, props);
-    _this20.dom = /*#__PURE__*/(0, _react.createRef)();
-    return _this20;
+    _this21 = _super13.call(this, props);
+    _this21.dom = /*#__PURE__*/(0, _react.createRef)();
+    return _this21;
   }
 
   _createClass(GridCell, [{
     key: "getStyle",
     value: function getStyle() {
-      var _this$props23 = this.props,
-          column = _this$props23.column,
-          row = _this$props23.row;
+      var _this$props24 = this.props,
+          column = _this$props24.column,
+          row = _this$props24.row;
       var rtl = this.context.rtl;
       var style = {
         minWidth: column.minWidth ? column.minWidth + 'px' : undefined
@@ -2221,11 +2332,11 @@ var GridCell = /*#__PURE__*/function (_Component13) {
   }, {
     key: "getClassName",
     value: function getClassName() {
-      var _this$props24 = this.props,
-          column = _this$props24.column,
-          message = _this$props24.message,
-          cellSelected = _this$props24.cellSelected,
-          inlineEdit = _this$props24.inlineEdit;
+      var _this$props25 = this.props,
+          column = _this$props25.column,
+          message = _this$props25.message,
+          cellSelected = _this$props25.cellSelected,
+          inlineEdit = _this$props25.inlineEdit;
       var className = 'grid-cell';
       className += column.treeMode ? ' grid-tree-cell' : '';
       className += column.className ? ' ' + column.className : '';
@@ -2239,11 +2350,11 @@ var GridCell = /*#__PURE__*/function (_Component13) {
     value: function getInlineInput() {
       var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
 
-      var _ref9 = arguments.length > 1 ? arguments[1] : undefined,
-          _ref9$type = _ref9.type,
-          type = _ref9$type === void 0 ? 'text' : _ref9$type,
-          _ref9$options = _ref9.options,
-          options = _ref9$options === void 0 ? [] : _ref9$options;
+      var _ref10 = arguments.length > 1 ? arguments[1] : undefined,
+          _ref10$type = _ref10.type,
+          type = _ref10$type === void 0 ? 'text' : _ref10$type,
+          _ref10$options = _ref10.options,
+          options = _ref10$options === void 0 ? [] : _ref10$options;
 
       var colIndex = arguments.length > 2 ? arguments[2] : undefined;
       var _this$context12 = this.context,
@@ -2306,10 +2417,10 @@ var GridCell = /*#__PURE__*/function (_Component13) {
     key: "getTemplate",
     value: function getTemplate(row, column, value) {
       var treeTemplate = this.context.treeTemplate;
-      var _this$props25 = this.props,
-          rowSelected = _this$props25.rowSelected,
-          inlineEdit = _this$props25.inlineEdit,
-          colIndex = _this$props25.colIndex;
+      var _this$props26 = this.props,
+          rowSelected = _this$props26.rowSelected,
+          inlineEdit = _this$props26.inlineEdit,
+          colIndex = _this$props26.colIndex;
 
       if (rowSelected && inlineEdit) {
         return this.getInlineInput(value, inlineEdit, colIndex);
@@ -2347,11 +2458,11 @@ var GridCell = /*#__PURE__*/function (_Component13) {
         return;
       }
 
-      var _this$props26 = this.props,
-          _this$props26$rowInde = _this$props26.rowIndex,
-          rowIndex = _this$props26$rowInde === void 0 ? false : _this$props26$rowInde,
-          _this$props26$colInde = _this$props26.colIndex,
-          colIndex = _this$props26$colInde === void 0 ? false : _this$props26$colInde;
+      var _this$props27 = this.props,
+          _this$props27$rowInde = _this$props27.rowIndex,
+          rowIndex = _this$props27$rowInde === void 0 ? false : _this$props27$rowInde,
+          _this$props27$colInde = _this$props27.colIndex,
+          colIndex = _this$props27$colInde === void 0 ? false : _this$props27$colInde;
 
       if (rowIndex === false || colIndex === false) {
         return;
@@ -2380,9 +2491,9 @@ var GridCell = /*#__PURE__*/function (_Component13) {
     }
   }, {
     key: "getValue",
-    value: function getValue(row, _ref10) {
-      var isDefault = _ref10.isDefault,
-          field = _ref10.field;
+    value: function getValue(row, _ref11) {
+      var isDefault = _ref11.isDefault,
+          field = _ref11.field;
 
       if (field === undefined) {
         return;
@@ -2404,11 +2515,11 @@ var GridCell = /*#__PURE__*/function (_Component13) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props27 = this.props,
-          row = _this$props27.row,
-          column = _this$props27.column,
-          colIndex = _this$props27.colIndex,
-          message = _this$props27.message;
+      var _this$props28 = this.props,
+          row = _this$props28.row,
+          column = _this$props28.column,
+          colIndex = _this$props28.colIndex,
+          message = _this$props28.message;
       var value = this.getValue(row, column);
       return /*#__PURE__*/_react.default.createElement("div", {
         title: column.template ? undefined : value,
@@ -2471,10 +2582,10 @@ var TreeCell = /*#__PURE__*/function (_Component15) {
   _createClass(TreeCell, [{
     key: "render",
     value: function render() {
-      var _this$props28 = this.props,
-          row = _this$props28.row,
-          value = _this$props28.value,
-          column = _this$props28.column;
+      var _this$props29 = this.props,
+          row = _this$props29.row,
+          value = _this$props29.value,
+          column = _this$props29.column;
       var onChange = this.context.onChange;
       var icon = (column.icon ? column.icon(row) : false) || {};
       return /*#__PURE__*/_react.default.createElement(_react.Fragment, null, onChange && /*#__PURE__*/_react.default.createElement(GridToggleIcon, {
@@ -2610,9 +2721,9 @@ var GridGroupToggleIcon = /*#__PURE__*/function (_Component18) {
   }, {
     key: "click",
     value: function click() {
-      var _this$props29 = this.props,
-          index = _this$props29.index,
-          onChange = _this$props29.onChange;
+      var _this$props30 = this.props,
+          index = _this$props30.index,
+          onChange = _this$props30.onChange;
       onChange(index);
     }
   }, {
@@ -2653,9 +2764,9 @@ var GridCheckbox = /*#__PURE__*/function (_Component19) {
   }, {
     key: "render",
     value: function render() {
-      var _this$props30 = this.props,
-          checked = _this$props30.checked,
-          disabled = _this$props30.disabled;
+      var _this$props31 = this.props,
+          checked = _this$props31.checked,
+          disabled = _this$props31.disabled;
       return /*#__PURE__*/_react.default.createElement("input", {
         type: "checkbox",
         onChange: this.change.bind(this),
@@ -2684,9 +2795,9 @@ var GridIcon = /*#__PURE__*/function (_Component20) {
   _createClass(GridIcon, [{
     key: "render",
     value: function render() {
-      var _this$props31 = this.props,
-          className = _this$props31.className,
-          color = _this$props31.color;
+      var _this$props32 = this.props,
+          className = _this$props32.className,
+          color = _this$props32.color;
       return /*#__PURE__*/_react.default.createElement("div", {
         className: 'grid-icon ' + className,
         style: {

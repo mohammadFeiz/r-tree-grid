@@ -487,12 +487,12 @@
 .grid-cell-error:before{
   content:'\2139';
 }
-.grid-cell-add{
+.grid-cell-add,.grid-cell-remove{
   display:flex;
   justify-content: center;
   align-items: center;
 }
-.add-icon{
+.add-icon,.remove-icon{
   display:flex;
   justify-content: center;
   align-items: center;
@@ -503,6 +503,9 @@
 }
 .add-icon:after{
   content:'\271a';
+}
+.remove-icon:after{
+  content:'\2716';
 }
 
 .grid-loading{
