@@ -260,7 +260,7 @@ export default class Grid extends Component{
   }
 }
 Grid.defaultProps = {
-  split:{length:0},globalization:'en'
+  split:{length:0},globalization:'en',dataType:'composite'
 }
 class GridPaging extends Component{
   static contextType = GridContext;
@@ -419,6 +419,10 @@ export class GridContainer extends Component{
     return {
       width:30,resizable:false,movable:false,className:'grid-cell-add',isDefault:true,
       template:(value,{row,column},context)=>{
+        if(addField.enable === false){return '';}
+        if(typeof addFiled.enable === 'function'){
+          if(addField.enable(row) === false){return '';}
+        }
         return <div className='add-icon' onClick={()=>{
           this.add(row)
         }}></div>

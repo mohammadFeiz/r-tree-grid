@@ -498,7 +498,8 @@ Grid.defaultProps = {
   split: {
     length: 0
   },
-  globalization: 'en'
+  globalization: 'en',
+  dataType: 'composite'
 };
 
 var GridPaging = /*#__PURE__*/function (_Component2) {
@@ -908,6 +909,17 @@ var GridContainer = /*#__PURE__*/function (_Component4) {
         template: function template(value, _ref4, context) {
           var row = _ref4.row,
               column = _ref4.column;
+
+          if (addField.enable === false) {
+            return '';
+          }
+
+          if (typeof addFiled.enable === 'function') {
+            if (addField.enable(row) === false) {
+              return '';
+            }
+          }
+
           return /*#__PURE__*/_react.default.createElement("div", {
             className: "add-icon",
             onClick: function onClick() {
