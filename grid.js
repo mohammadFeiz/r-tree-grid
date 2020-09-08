@@ -420,7 +420,7 @@ export class GridContainer extends Component{
       width:30,resizable:false,movable:false,className:'grid-cell-add',isDefault:true,
       template:(value,{row,column},context)=>{
         if(addField.enable === false){return '';}
-        if(typeof addFiled.enable === 'function'){
+        if(typeof addField.enable === 'function'){
           if(addField.enable(row) === false){return '';}
         }
         return <div className='add-icon' onClick={()=>{

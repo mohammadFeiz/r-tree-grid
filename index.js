@@ -914,7 +914,7 @@ var GridContainer = /*#__PURE__*/function (_Component4) {
             return '';
           }
 
-          if (typeof addFiled.enable === 'function') {
+          if (typeof addField.enable === 'function') {
             if (addField.enable(row) === false) {
               return '';
             }
